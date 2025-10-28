@@ -15,6 +15,16 @@ Log2Axis.id = "log2";
 Log2Axis.defaults = {};
 Chart.register(Log2Axis);
 
+function getDateSuffix(day) {
+  if (day > 3 && day < 21) return 'th';
+  switch (day % 10) {
+    case 1: return "st";
+    case 2: return "nd";
+    case 3: return "rd";
+    default: return "th";
+  }
+}
+
 function formatTime(minutes) {
   if (minutes === 0 || minutes === null) return "0m";
   const h = Math.floor(minutes / 60);
@@ -149,6 +159,18 @@ function updateChart(year, month, isYearly = false) {
       plugins: {
         tooltip: {
           callbacks: {
+            title: function(context) {
+              if (summaryPeriod === 'monthly') {
+                const day = parseInt(context[0].label, 10);
+                return context[0].label + getDateSuffix(day);
+              }
+              if (summaryPeriod === 'yearly') {
+                const monthIndex = context[0].dataIndex;
+                const date = new Date(selectedYear, monthIndex);
+                return date.toLocaleString('en-US', { month: 'long' });
+              }
+              return context[0].label;
+            },
             label: function(context) {
               let label = context.dataset.label || '';
               if (label) {
