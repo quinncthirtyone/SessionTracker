@@ -541,7 +541,7 @@ function RenderSessionHistory() {
     $activeSessions = RunDBQuery $getSessionHistoryQuery
 
     # Get idle sessions
-    $getIdleSessionsQuery = "SELECT id, game_name, session_start_time, session_duration_minutes, 'Idle' as type FROM idle_sessions WHERE profile_id = $profileId"
+    $getIdleSessionsQuery = "SELECT i.id, i.game_name, i.session_start_time, i.session_duration_minutes, g.icon, 'Idle' as type FROM idle_sessions i LEFT JOIN games g ON i.game_name = g.name WHERE i.profile_id = $profileId"
     $idleSessions = RunDBQuery $getIdleSessionsQuery
 
     # Combine and sort sessions
