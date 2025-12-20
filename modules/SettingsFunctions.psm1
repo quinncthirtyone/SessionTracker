@@ -139,7 +139,7 @@ function RenderEditGameForm($GamesList) {
 
     $checkboxIdleDetection = New-Object Windows.Forms.CheckBox
     $checkboxIdleDetection.Text = "Idle Detection"
-    $checkboxIdleDetection.Top = 175
+    $checkboxIdleDetection.Top = 98
     $checkboxIdleDetection.Left = 470
     $checkboxIdleDetection.Checked = $true
     $checkboxIdleDetection.Add_CheckedChanged($changeEventHandler)
@@ -537,7 +537,7 @@ function RenderAddGameForm() {
 
     $checkboxIdleDetection = New-Object Windows.Forms.CheckBox
     $checkboxIdleDetection.Text = "Idle Detection"
-    $checkboxIdleDetection.Top = 175
+    $checkboxIdleDetection.Top = 98
     $checkboxIdleDetection.Left = 470
     $checkboxIdleDetection.Checked = $false
     $addGameForm.Controls.Add($checkboxIdleDetection)
