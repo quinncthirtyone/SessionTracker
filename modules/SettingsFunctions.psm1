@@ -139,7 +139,7 @@ function RenderEditGameForm($GamesList) {
 
     $checkboxIdleDetection = New-Object Windows.Forms.CheckBox
     $checkboxIdleDetection.Text = "Idle Detection"
-    $checkboxIdleDetection.Top = 175
+    $checkboxIdleDetection.Top = 98
     $checkboxIdleDetection.Left = 470
     $checkboxIdleDetection.Checked = $true
     $checkboxIdleDetection.Add_CheckedChanged($changeEventHandler)
@@ -535,6 +535,13 @@ function RenderAddGameForm() {
     $labelPlayTime = Createlabel "PlayTime:" 170 140; $addGameForm.Controls.Add($labelPlayTime)
     $textPlayTime = CreateTextBox "0 Hr 0 Min" 245 140 200 20; $textPlayTime.ReadOnly = $true; $addGameForm.Controls.Add($textPlayTime)
 
+    $checkboxIdleDetection = New-Object Windows.Forms.CheckBox
+    $checkboxIdleDetection.Text = "Idle Detection"
+    $checkboxIdleDetection.Top = 98
+    $checkboxIdleDetection.Left = 470
+    $checkboxIdleDetection.Checked = $false
+    $addGameForm.Controls.Add($checkboxIdleDetection)
+
     $buttonSearchIcon = CreateButton "Search" 25 185
     $buttonSearchIcon.Size = New-Object System.Drawing.Size(60, 23)
     $buttonSearchIcon.Add_Click({
@@ -616,7 +623,7 @@ function RenderAddGameForm() {
             $gameLastPlayDate = (Get-Date ([datetime]::UtcNow) -UFormat "%s").Split('.').Get(0)
 
             SaveGame -GameName $gameName -GameExeName $gameExeName -GameIconPath $gameIconPath `
-                -GamePlayTime 0 -GameIdleTime 0 -GameLastPlayDate $gameLastPlayDate -GameCompleteStatus 'FALSE' -GamePlatform 'PC' -GameSessionCount 0
+                -GamePlayTime 0 -GameIdleTime 0 -GameLastPlayDate $gameLastPlayDate -GameCompleteStatus 'FALSE' -GamePlatform 'PC' -GameSessionCount 0 -GameIdleDetection $checkboxIdleDetection.Checked
 
             ShowMessage "Registered '$gameName' in Database." "OK" "Asterisk"
 

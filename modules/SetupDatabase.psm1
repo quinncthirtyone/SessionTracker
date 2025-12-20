@@ -11,7 +11,7 @@ function SetupDatabase() {
                             icon BLOB,
                             color_hex TEXT,
                             rom_based_name TEXT,
-                            idle_detection BOOLEAN DEFAULT TRUE)"
+                            idle_detection BOOLEAN DEFAULT FALSE)"
         Invoke-SqliteQuery -Query $createGamesTableQuery -SQLiteConnection $dbConnection | Out-Null
 
         $createPlatformsTableQuery = "CREATE TABLE IF NOT EXISTS emulated_platforms (
