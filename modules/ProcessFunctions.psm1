@@ -70,60 +70,64 @@ function DetectGame() {
 
 function TimeTrackerLoop($DetectedExe, $IdleDetectionEnabled, $GameName) {
     $hwInfoSensorSession = 'HKCU:\SOFTWARE\HWiNFO64\Sensors\Custom\SessionTracker\Other1'
-    $playTimeForCurrentSession = 0
-    $totalIdleTimeForCurrentSession = 0
-    $exeStartTime = ($null = [System.Diagnostics.Process]::GetProcessesByName($DetectedExe)).StartTime | Sort-Object | Select-Object -First 1
+    $sessionState = 'ACTIVE' # Initial state
+    $segmentStartTime = Get-Date
+    $totalPlayTime = 0
+    $totalIdleTime = 0
 
     while ($true) {
         try {
             if (-not ([System.Diagnostics.Process]::GetProcessesByName($DetectedExe))) {
-                # Process not running, exit loop
-                break
+                break # Process not running, exit loop
             }
         }
         catch {
-            # Handle potential exceptions when process is in a weird state
             Log "Error getting process $DetectedExe. Assuming it has exited. $($_.Exception.Message)"
             break
         }
 
-        $playTimeForCurrentSession = [int16] (New-TimeSpan -Start $exeStartTime).TotalMinutes
-
+        $currentIdleTime = 0
         if ($IdleDetectionEnabled) {
-            $idleTime = [int16] ([PInvoke.Win32.UserInput]::IdleTime).Minutes
-
-            if ($idleTime -ge 10) {
-                $idleSessionStartTime = (Get-Date).AddMinutes(-$idleTime)
-                $idleSessionStartTimeUnix = (Get-Date $idleSessionStartTime -UFormat %s).Split('.')[0]
-                $idleSessionDuration = 0
-                # Entered idle Session
-                while ($idleTime -ge 5) {
-                    # Track idle Time for current Idle Session
-                    $idleSessionDuration = $idleTime
-                    $idleTime = [int16] ([PInvoke.Win32.UserInput]::IdleTime).Minutes
-
-                    # Keep the hwinfo sensor updated to current play time session length while tracking idle session
-                    $playTimeForCurrentSession = [int16] (New-TimeSpan -Start $exeStartTime).TotalMinutes
-                    Set-Itemproperty -path $hwInfoSensorSession -Name 'Value' -value $playTimeForCurrentSession
-
-                    Start-Sleep -s 10
-                }
-                # Exited Idle Session, record it
-                Add-IdleSession -GameName $GameName -SessionStartTime $idleSessionStartTimeUnix -SessionDuration $idleSessionDuration
-                $totalIdleTimeForCurrentSession += $idleSessionDuration
-            }
+            $currentIdleTime = [int16]([PInvoke.Win32.UserInput]::IdleTime).Minutes
         }
-
+        $isIdle = $currentIdleTime -ge 10
+        $currentState = if ($isIdle) { 'IDLE' } else { 'ACTIVE' }
+        if ($currentState -ne $sessionState) {
+            $segmentDuration = [int]([Math]::Round((New-TimeSpan -Start $segmentStartTime).TotalMinutes))
+            if ($segmentDuration -gt 0) {
+                if ($sessionState -eq 'ACTIVE') {
+                    RecordSessionHistory -GameName $GameName -SessionStartTime $segmentStartTime -SessionDuration $segmentDuration
+                    $totalPlayTime += $segmentDuration
+                }
+                else {
+                    $idleSessionStartTimeUnix = (Get-Date $segmentStartTime -UFormat %s).Split('.')[0]
+                    Add-IdleSession -GameName $GameName -SessionStartTime $idleSessionStartTimeUnix -SessionDuration $segmentDuration
+                    $totalIdleTime += $segmentDuration
+                }
+            }
+            $sessionState = $currentState
+            $segmentStartTime = Get-Date
+        }
+        $playTimeForCurrentSession = [int16] (New-TimeSpan -Start $segmentStartTime).TotalMinutes
         Set-Itemproperty -path $hwInfoSensorSession -Name 'Value' -value $playTimeForCurrentSession
+
         Start-Sleep -s 10
     }
+    $finalSegmentDuration = [int]([Math]::Round((New-TimeSpan -Start $segmentStartTime).TotalMinutes))
+    if ($finalSegmentDuration -gt 0) {
+        if ($sessionState -eq 'ACTIVE') {
+            RecordSessionHistory -GameName $GameName -SessionStartTime $segmentStartTime -SessionDuration $finalSegmentDuration
+            $totalPlayTime += $finalSegmentDuration
+        }
+        else {
+            $idleSessionStartTimeUnix = (Get-Date $segmentStartTime -UFormat %s).Split('.')[0]
+            Add-IdleSession -GameName $GameName -SessionStartTime $idleSessionStartTimeUnix -SessionDuration $finalSegmentDuration
+            $totalIdleTime += $finalSegmentDuration
+        }
+    }
 
-    Log "Play time for current session: $playTimeForCurrentSession min. Idle time for current session: $totalIdleTimeForCurrentSession min."
-
-    $PlayTimeExcludingIdleTime = $playTimeForCurrentSession - $totalIdleTimeForCurrentSession
-    Log "Play time for current session excluding Idle time $PlayTimeExcludingIdleTime min"
-
-    return @($PlayTimeExcludingIdleTime, $totalIdleTimeForCurrentSession, $exeStartTime)
+    Log "Total Play time: $totalPlayTime min. Total Idle time: $totalIdleTime min."
+    return @($totalPlayTime, $totalIdleTime, $segmentStartTime)
 }
 
 function MonitorGame($DetectedExe) {
