@@ -5,7 +5,7 @@
 #_pragma title 'SessionTracker: Gameplay Time Tracker'
 #_pragma product 'SessionTracker'
 #_pragma copyright '© 2023 Kulvinder Singh'
-#_pragma version '2025.07.28'
+#_pragma version '2026.05.13'
 
 [System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms')    | Out-null
 [System.Reflection.Assembly]::LoadWithPartialName('System.Drawing')          | Out-null
